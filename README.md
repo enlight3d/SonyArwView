@@ -1,4 +1,4 @@
-# SonyARW — Embedded-Preview Codec & Thumbnails for Sony A7 V (.ARW)
+# SonyArwView — Embedded-Preview Viewer & Thumbnails for Sony A7 V (.ARW)
 
 Make Sony **A7 V / ILCE-7M5** `.ARW` RAW files **viewable** and **show
 thumbnails** on Windows 11 — **without decoding RAW sensor data**. Every image
@@ -103,46 +103,50 @@ powershell -ExecutionPolicy Bypass -File .\scripts\unregister-wic.ps1
 
 ## Phase 3/4 — Explorer thumbnails + open-in-Photos (the full experience)
 
-This needs **Developer Mode** (to register an unsigned local MSIX). Enable it in
-*Settings ▸ System ▸ For developers ▸ Developer Mode*, or:
+This ships as a **signed MSIX package**, so **no Developer Mode is required** —
+the installer trusts a local self-signed certificate (one UAC prompt) and
+installs the package.
 
 ```powershell
-# (admin) enable Developer Mode
-Set-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" AllowDevelopmentWithoutDevLicense 1
+# 1. Build the signed package (-> build\installer\SonyArwThumbnail.msix + .cer)
+powershell -ExecutionPolicy Bypass -File .\scripts\build-package.ps1
+
+# 2. Install: trusts the cert (one UAC), installs the package, registers the WIC
+#    decoder, refreshes the thumbnail cache, and opens Settings so you can set
+#    SonyArwView as the default .arw app.
+powershell -ExecutionPolicy Bypass -File .\scripts\Install.ps1
 ```
 
-Then:
+In the Settings page the installer opens, pick **SonyArwView - Sony ARW Preview**
+for `.arw`. That single click is the only manual step — Windows protects the
+default-app choice, so it cannot be set silently.
 
-```powershell
-# 1. Register the packaged thumbnail provider (stages + Add-AppxPackage -Register)
-powershell -ExecutionPolicy Bypass -File .\scripts\register-msix-thumbnail.ps1
-
-# 2. Make our app the default handler for .arw  (REQUIRED for thumbnails):
-#    Right-click any .arw > Open with > Choose another app >
-#    "Sony ARW Embedded Preview Thumbnail" > Always.
-#    (Windows protects this choice; it must be set in the UI, once.)
-
-# 3. Refresh Explorer:
-powershell -ExecutionPolicy Bypass -File .\scripts\clear-thumbnail-cache.ps1
-```
-
-Open the folder with **Extra large icons** — thumbnails appear. Double-click an
-`.arw` — the embedded preview opens in Photos.
+Then open the folder with **Extra large icons**: thumbnails appear (portrait
+shots upright), and double-clicking an `.arw` opens the preview in Photos.
 
 > **Why set the default app?** Windows resolves the thumbnail handler from the
-> file's *default* app. Our app must be the default for `.arw` so the thumbnail
-> resolves to our handler. This also gives you double-click-to-view. If you set
-> Photos back as the default, thumbnails revert (Photos can't decode A7 V RAW).
+> file's *default* app, so SonyArwView must be the default for `.arw`. This also
+> gives you double-click-to-view. If you set Photos back as the default,
+> thumbnails revert (Photos can't decode A7 V RAW).
 
 ### Uninstall
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\unregister-msix-thumbnail.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\unregister-wic.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\clear-thumbnail-cache.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\Uninstall.ps1
 ```
 
-Restart Explorer if needed: `taskkill /f /im explorer.exe & start explorer.exe`.
+Removes the package, the `.arw` default-app choice, the WIC decoder, and the
+trusted certificate, then refreshes the thumbnail cache. Restart Explorer if
+needed: `taskkill /f /im explorer.exe & start explorer.exe`.
+
+### Alternative: unsigned dev install (requires Developer Mode)
+
+If you would rather not sign, enable Developer Mode
+(`Settings ▸ System ▸ For developers`) and register the loose package instead:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\register-msix-thumbnail.ps1
+```
 
 ---
 
@@ -168,7 +172,7 @@ CMakeLists.txt
 Set `SONY_ARW_WIC_DEBUG=1` (decoder) or `SONY_ARW_THUMB_DEBUG=1` (thumbnail) to
 log to `%TEMP%\SonyArwWicDecoder.log` / `%TEMP%\SonyArwThumbnailProvider.log`.
 For the packaged provider the log is under its package container's temp folder
-(`%LOCALAPPDATA%\Packages\SonyARW.EmbeddedPreviewThumbnail_*\...`).
+(`%LOCALAPPDATA%\Packages\SonyArwView_*\...`).
 
 See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) and
 [docs/REGISTRY.md](docs/REGISTRY.md).
