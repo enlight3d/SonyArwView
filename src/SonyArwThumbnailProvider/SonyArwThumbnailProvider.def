@@ -1,0 +1,7 @@
+; SonyArwThumbnailProvider.def - exported COM in-proc server entry points.
+LIBRARY SonyArwThumbnailProvider
+EXPORTS
+    DllGetClassObject   PRIVATE
+    DllCanUnloadNow     PRIVATE
+    DllRegisterServer   PRIVATE
+    DllUnregisterServer PRIVATE

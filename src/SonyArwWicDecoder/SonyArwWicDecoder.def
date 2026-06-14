@@ -1,0 +1,7 @@
+; SonyArwWicDecoder.def - exported COM in-proc server entry points.
+LIBRARY SonyArwWicDecoder
+EXPORTS
+    DllGetClassObject   PRIVATE
+    DllCanUnloadNow     PRIVATE
+    DllRegisterServer   PRIVATE
+    DllUnregisterServer PRIVATE

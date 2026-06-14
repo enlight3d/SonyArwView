@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  MSIX package manifest for SonyArwView - the Sony ARW (A7 V) embedded-preview
+  thumbnail provider + .arw open handler.
+
+  WHY THIS EXISTS:
+    Windows 11 resolves .arw thumbnails through *packaged* image apps (Photos /
+    the Microsoft Raw Image Extension). Classic (HKCU/HKLM) thumbnail handlers
+    are never consulted for an extension owned by a packaged app. The only way a
+    third party can compete at that tier is to ALSO be a packaged app declaring a
+    thumbnail handler for the extension. This package does exactly that.
+
+    It registers our native IThumbnailProvider DLL as a packaged COM server
+    (com:SurrogateServer) and wires it to .arw via desktop2:ThumbnailHandler.
+    When SonyArwView is the default app for .arw, Explorer routes thumbnail
+    requests to our handler.
+
+  The Application is also the .arw "open" handler: launching it extracts the
+  embedded preview and opens it in the default image viewer.
+-->
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  xmlns:com="http://schemas.microsoft.com/appx/manifest/com/windows10"
+  xmlns:desktop2="http://schemas.microsoft.com/appx/manifest/desktop/windows10/2"
+  IgnorableNamespaces="uap rescap com desktop2">
+
+  <Identity Name="SonyArwView"
+            Publisher="CN=SonyArwView"
+            Version="1.0.0.0"
+            ProcessorArchitecture="x64" />
+
+  <Properties>
+    <DisplayName>SonyArwView</DisplayName>
+    <PublisherDisplayName>SonyArwView</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="en-us" />
+  </Resources>
+
+  <Applications>
+    <Application Id="App"
+                 Executable="SonyArwPreviewExtract.exe"
+                 EntryPoint="windows.FullTrustApplication">
+      <uap:VisualElements
+          AppListEntry="none"
+          DisplayName="SonyArwView - Sony ARW Preview"
+          Description="View Sony ARW (A7 V) embedded previews and show Explorer thumbnails."
+          BackgroundColor="#0078D7"
+          Square150x150Logo="Assets\Square150x150Logo.png"
+          Square44x44Logo="Assets\Square44x44Logo.png" />
+      <Extensions>
+        <!-- Register the native IThumbnailProvider DLL as a packaged COM class. -->
+        <com:Extension Category="windows.comServer">
+          <com:ComServer>
+            <com:SurrogateServer DisplayName="SonyArwView Thumbnail Provider">
+              <com:Class Id="7A501F17-2299-40E4-ABC8-C1FECD9D10D2"
+                         Path="SonyArwThumbnailProvider.dll"
+                         ThreadingModel="STA" />
+            </com:SurrogateServer>
+          </com:ComServer>
+        </com:Extension>
+        <!-- Associate that class as the thumbnail handler for .arw, and make this
+             app a handler for .arw (so it can be the default and own thumbnails). -->
+        <uap:Extension Category="windows.fileTypeAssociation">
+          <uap:FileTypeAssociation Name="arw">
+            <uap:SupportedFileTypes>
+              <uap:FileType>.arw</uap:FileType>
+            </uap:SupportedFileTypes>
+            <uap:Logo>Assets\Square44x44Logo.png</uap:Logo>
+            <uap:DisplayName>Sony ARW (Embedded Preview)</uap:DisplayName>
+            <desktop2:ThumbnailHandler Clsid="7A501F17-2299-40E4-ABC8-C1FECD9D10D2" />
+          </uap:FileTypeAssociation>
+        </uap:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>

@@ -1,0 +1,27 @@
+# Build output
+/build/
+/out/
+/cmake-build-*/
+
+# Personal RAW samples (provide your own .ARW files to test)
+/samples/*.ARW
+/samples/*.arw
+
+# Signing / packaging artifacts (generated locally)
+*.pfx
+*.cer
+*.msix
+*.appx
+
+# Logs and scratch extraction output
+*.log
+*_preview.jpg
+preview.jpg
+decoded.png
+
+# Editor / OS cruft
+.vs/
+.vscode/
+*.user
+Thumbs.db
+desktop.ini
