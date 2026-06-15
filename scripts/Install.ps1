@@ -1,66 +1,75 @@
 <#
 .SYNOPSIS
-    Install the Sony ARW preview solution (signed MSIX thumbnail provider +
-    optional classic WIC decoder).
+    Install SonyArwView: trust the signing certificate, install the signed MSIX,
+    (optionally) register the classic WIC decoder, refresh thumbnails, and open
+    Settings so you can set SonyArwView as the default .arw app.
 
 .DESCRIPTION
-    1. Trusts the package's signing certificate (machine store; one UAC prompt).
-    2. Installs the signed MSIX (App Installer) — gives Explorer thumbnails and
-       the .arw "open in Photos" handler.
-    3. Optionally registers the classic WIC decoder for desktop WIC apps.
-    4. Refreshes the Explorer thumbnail cache.
+    Works two ways with no changes:
+      * From a release: place SonyArwView.msix + SonyArwView.cer next to this
+        script and run it.
+      * From source: run scripts\build-package.ps1 first, then this.
 
-    After install you must set our app as the default for .arw (one-time, in the
-    UI) so Windows routes thumbnails to our handler — see the printed final step.
-
-    Run build-package.ps1 first to produce the signed package.
+    No Developer Mode required (the package is signed; the cert is trusted into
+    LocalMachine\TrustedPeople via one UAC prompt).
 
 .EXAMPLE
-    powershell -ExecutionPolicy Bypass -File .\scripts\Install.ps1
+    powershell -ExecutionPolicy Bypass -File .\Install.ps1
 #>
 [CmdletBinding()]
 param([switch]$SkipWicDecoder)
 
 $ErrorActionPreference = 'Stop'
-$repo = Split-Path -Parent $PSScriptRoot
-$out  = Join-Path $repo 'build\installer'
-$msix = Join-Path $out 'SonyArwThumbnail.msix'
-$cer  = Join-Path $out 'SonyArwThumbnail.cer'
-if (-not (Test-Path $msix)) { Write-Error "Package not found. Run build-package.ps1 first."; exit 1 }
+$here = $PSScriptRoot
+$repo = Split-Path -Parent $here
 
-# 1. Trust the signing certificate (LocalMachine\TrustedPeople) — needs admin.
+function Find-First([string[]]$names) {
+    foreach ($d in @($here, (Join-Path $repo 'build\installer'),
+                     (Join-Path $repo 'build\src\SonyArwWicDecoder\Release'))) {
+        foreach ($n in $names) { $p = Join-Path $d $n; if (Test-Path $p) { return (Resolve-Path $p).Path } }
+    }
+    return $null
+}
+
+$msix = Find-First @('SonyArwView.msix', 'SonyArwThumbnail.msix')
+$cer  = Find-First @('SonyArwView.cer',  'SonyArwThumbnail.cer')
+if (-not $msix) { Write-Error "SonyArwView.msix not found. Build it (scripts\build-package.ps1) or place it next to this script."; exit 1 }
+if (-not $cer)  { Write-Error "SonyArwView.cer not found next to the package."; exit 1 }
+
+# 1. Trust the signing certificate (LocalMachine\TrustedPeople) -- needs admin.
 $thumb = (Get-PfxCertificate $cer).Thumbprint
 if (-not (Test-Path "Cert:\LocalMachine\TrustedPeople\$thumb")) {
-    Write-Host "Trusting signing certificate (approve the UAC prompt)..." -ForegroundColor Cyan
+    Write-Host "Trusting the signing certificate (approve the UAC prompt)..." -ForegroundColor Cyan
     $cmd = "Import-Certificate -FilePath '$cer' -CertStoreLocation 'Cert:\LocalMachine\TrustedPeople' | Out-Null"
     Start-Process powershell -Verb RunAs -ArgumentList '-NoProfile', '-Command', $cmd -Wait
 }
 
-# 2. Install the signed package (replace any prior dev registration first).
+# 2. Install the signed package (replace any prior version first).
 Get-AppxPackage -Name 'SonyArwView' | Remove-AppxPackage -ErrorAction SilentlyContinue
-Write-Host "Installing signed package..." -ForegroundColor Cyan
+Write-Host "Installing SonyArwView..." -ForegroundColor Cyan
 Add-AppxPackage -Path $msix
-Write-Host "Package installed (visible in Settings > Apps > Installed apps)." -ForegroundColor Green
+Write-Host "Installed (see Settings > Apps > Installed apps)." -ForegroundColor Green
 
-# 3. Optional: classic WIC decoder for desktop WIC apps.
+# 3. Optional: classic WIC decoder for desktop WIC apps (if present).
 if (-not $SkipWicDecoder) {
-    $wic = Join-Path $repo 'build\src\SonyArwWicDecoder\Release\SonyArwWicDecoder.dll'
-    if (Test-Path $wic) {
-        Start-Process regsvr32 -ArgumentList '/s', "`"$wic`"" -Wait
-        Write-Host "WIC decoder registered (per-user)." -ForegroundColor Green
-    }
+    $wic = Find-First @('SonyArwWicDecoder.dll')
+    if ($wic) { Start-Process regsvr32 -ArgumentList '/s', "`"$wic`"" -Wait; Write-Host "WIC decoder registered (per-user)." -ForegroundColor Green }
 }
 
-# 4. Refresh thumbnail cache + Explorer.
-& (Join-Path $PSScriptRoot 'clear-thumbnail-cache.ps1') | Out-Null
+# 4. Refresh the Explorer thumbnail cache.
+Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue
+Get-ChildItem "$env:LOCALAPPDATA\Microsoft\Windows\Explorer" -Filter 'thumbcache_*.db' -ErrorAction SilentlyContinue |
+    Remove-Item -Force -ErrorAction SilentlyContinue
+Start-Process explorer.exe
 
-# 5. Open Settings to SonyArwView's default-apps page so the user can set it as
-#    the default for .arw (required for thumbnails; Windows has no silent API).
+# 5. Open Settings to SonyArwView's default-apps page for the one-time choice.
+$pkg = Get-AppxPackage -Name 'SonyArwView'
+if ($pkg) { Start-Process "ms-settings:defaultapps?registeredAUMID=$($pkg.PackageFamilyName)!App" }
+
 Write-Host ""
 Write-Host "==================================================================" -ForegroundColor Yellow
-Write-Host " FINAL STEP (one time): set SonyArwView as the default for .arw." -ForegroundColor Yellow
-Write-Host " Opening Settings to the right page now -- click the '.arw' entry" -ForegroundColor Yellow
-Write-Host " and choose 'SonyArwView - Sony ARW Preview'." -ForegroundColor Yellow
-Write-Host " (Required: Windows ties the thumbnail handler to the default app.)" -ForegroundColor Yellow
+Write-Host " LAST STEP (one click): in the Settings page that just opened," -ForegroundColor Yellow
+Write-Host " set  .arw  to  'SonyArwView - Sony ARW Preview'." -ForegroundColor Yellow
+Write-Host " (Required: Windows resolves the thumbnail handler from the default" -ForegroundColor Yellow
+Write-Host "  app, and protects that choice so it can't be set silently.)" -ForegroundColor Yellow
 Write-Host "==================================================================" -ForegroundColor Yellow
-& (Join-Path $PSScriptRoot 'set-default.ps1') | Out-Null

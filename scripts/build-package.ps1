@@ -57,9 +57,9 @@ if (-not (Test-Path (Join-Path $stage 'Assets\Square150x150Logo.png'))) {
 }
 
 New-Item -ItemType Directory -Force $out | Out-Null
-$msix = Join-Path $out 'SonyArwThumbnail.msix'
-$cer  = Join-Path $out 'SonyArwThumbnail.cer'
-$pfx  = Join-Path $out 'SonyArwSign.pfx'
+$msix = Join-Path $out 'SonyArwView.msix'
+$cer  = Join-Path $out 'SonyArwView.cer'
+$pfx  = Join-Path $out 'SonyArwView.pfx'
 
 # --- pack -------------------------------------------------------------------
 Write-Host "Packing MSIX..." -ForegroundColor Cyan
