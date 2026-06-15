@@ -1,9 +1,10 @@
-# SonyArwView — Embedded-Preview Viewer & Thumbnails for Sony RAW (.ARW)
+# SonyArwView — Sony A7 V (.ARW) Thumbnails & Preview Viewer for Windows 11
 
-See your Sony `.ARW` RAW files as **thumbnails in File Explorer** and **open them
-in Windows Photos** on Windows 11 — **without decoding RAW sensor data**.
-SonyArwView surfaces the **full-resolution JPEG preview** the camera already
-embeds in every `.ARW` and hands it to Windows' own JPEG decoder.
+Get **File Explorer thumbnails** for **Sony A7 V** (ILCE-7M5) `.ARW` RAW files —
+and other recent Sony bodies — and **open them in Windows Photos**, on Windows
+11, **without decoding RAW sensor data**. SonyArwView surfaces the
+**full-resolution JPEG preview** the camera already embeds in every `.ARW` and
+hands it to Windows' own JPEG decoder.
 
 It targets **recent Sony cameras whose RAW Windows doesn't handle yet** — the
 newer bodies shooting **Compressed HQ RAW** (A7 V / ILCE-7M5, A1 II, A9 III, …).
@@ -27,45 +28,51 @@ SonyArwView is a small **signed app package** (MSIX). It is signed with a
 self-signed certificate, so you trust that certificate once, then install the
 package. No Developer Mode needed.
 
-### From a release (recommended)
-
-Download the latest [release](../../releases) — it bundles `SonyArwView.msix`,
-`SonyArwView.cer`, and `Install.ps1`. Then **let the installer do it for you**
-(trusts the cert via one UAC prompt, installs the app, and opens the right
-Settings page):
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\Install.ps1
-```
-
-<details><summary>…or install by hand (no scripts)</summary>
+Download `SonyArwView.msix` and `SonyArwView.cer` from the latest
+[release](../../releases), then **three clicks**:
 
 1. **Trust the certificate (once):** right-click **`SonyArwView.cer`** →
    *Install Certificate* → **Local Machine** → *Place all certificates in the
-   following store* → **Trusted People** → Finish. (Needs admin.)
-2. **Install the app:** double-click **`SonyArwView.msix`** → *Install*.
-</details>
+   following store* → **Trusted People** → Finish. (Approve the admin prompt.)
+2. **Install the app:** double-click **`SonyArwView.msix`** → **Install**.
+3. **Make it the default for `.arw`:** open any `.arw`, choose
+   **SonyArwView — Sony ARW Preview**, and tick **Always**.
 
-**Finish with the one-time default-app step:** open any `.arw`, choose
-**SonyArwView — Sony ARW Preview**, tick *Always*. *(Windows protects the
-default-app choice, so this single click can't be automated — and the thumbnail
-handler is resolved from the default app, which is why it's required.)*
+That's it. Open a folder with **Extra large icons** — thumbnails appear — and
+double-click any `.arw` to view it in Photos.
 
-Open a folder with **Extra large icons** — thumbnails appear, and double-clicking
-an `.arw` shows the photo in Photos.
+> *(Step 3 is unavoidable: Windows resolves the thumbnail handler from the file's
+> default app and protects that choice, so it can't be set silently.)*
+
+**Prefer one command?** The release also bundles `Install.ps1`, which does steps
+1–2 and opens the Settings page for step 3:
+`powershell -ExecutionPolicy Bypass -File .\Install.ps1`
 
 ### Build from source
 
-Requires Visual Studio 2022 / Build Tools (VC++ x64) + Windows 11 SDK 10.0.26100.
+**Prerequisites** (Windows 11 x64):
+
+* **Visual Studio 2022** *or* **Build Tools for Visual Studio 2022**, with:
+  * the **MSVC v143 — VS 2022 C++ x64/x86 build tools**, and
+  * the **Windows 11 SDK (10.0.26100)** — also provides `makeappx`/`signtool`
+    used to build and sign the package.
+* **CMake ≥ 3.20** (the VS *C++ CMake tools* component includes it).
+
+Install the Build Tools with exactly those components in one shot:
+
+```powershell
+winget install Microsoft.VisualStudio.2022.BuildTools --override `
+  "--quiet --wait --add Microsoft.VisualStudio.Workload.VCTools --add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --add Microsoft.VisualStudio.Component.Windows11SDK.26100 --add Microsoft.VisualStudio.Component.VC.CMake.Project --includeRecommended"
+```
+
+Then build, and (optionally) build + install the package:
 
 ```powershell
 cmake -S . -B build -G "Visual Studio 17 2022" -A x64
 cmake --build build --config Release
 
-# Build the signed .msix, then install it (one installer command that trusts the
-# cert, installs the package, and opens Settings to set the default app):
-powershell -ExecutionPolicy Bypass -File .\scripts\build-package.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\Install.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\build-package.ps1  # -> build\installer\SonyArwView.msix
+powershell -ExecutionPolicy Bypass -File .\scripts\Install.ps1        # trust cert + install
 ```
 
 ### Uninstall
