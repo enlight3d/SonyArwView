@@ -54,6 +54,7 @@ endfunction()
 
 add_subdirectory(src/ArwPreviewExtractor)
 add_subdirectory(src/SonyArwPreviewExtract)
+add_subdirectory(src/SonyArwOpen)
 
 # Phase 2: WIC decoder DLL + its test harness.
 add_subdirectory(src/SonyArwWicDecoder)

@@ -9,6 +9,7 @@
 // It exercises the shared ArwPreviewExtractor library end-to-end.
 
 #include "ArwPreviewExtractor.h"
+#include "JpegValidation.h"  // arw::jpeg::InjectExifOrientation
 
 #include <windows.h>
 #include <objbase.h>
@@ -147,29 +148,6 @@ int DoScanFolder(const wchar_t* folder) {
     return (total > 0 && ok == total) ? 0 : 5;
 }
 
-// Insert a minimal EXIF APP1 segment carrying just the Orientation tag, right
-// after the JPEG SOI. The embedded preview has no EXIF, but the ARW container's
-// IFD0 orientation applies to it; injecting it (losslessly, no re-encode) makes
-// image viewers such as Windows Photos display portrait shots upright.
-void ApplyExifOrientation(std::vector<uint8_t>& jpeg, uint16_t orientation) {
-    if (orientation <= 1 || orientation > 8) return;
-    if (jpeg.size() < 2 || jpeg[0] != 0xFF || jpeg[1] != 0xD8) return; // need SOI
-    const uint8_t app1[] = {
-        0xFF, 0xE1, 0x00, 0x22,              // APP1, length = 34
-        'E','x','i','f', 0x00, 0x00,         // "Exif\0\0"
-        'I','I', 0x2A, 0x00,                 // TIFF little-endian, magic 42
-        0x08, 0x00, 0x00, 0x00,              // IFD0 offset = 8
-        0x01, 0x00,                          // IFD0 entry count = 1
-        0x12, 0x01,                          // tag 0x0112 (Orientation)
-        0x03, 0x00,                          // type 3 (SHORT)
-        0x01, 0x00, 0x00, 0x00,              // count 1
-        static_cast<uint8_t>(orientation & 0xFF),
-        static_cast<uint8_t>((orientation >> 8) & 0xFF), 0x00, 0x00, // value (inline)
-        0x00, 0x00, 0x00, 0x00               // next IFD offset = 0
-    };
-    jpeg.insert(jpeg.begin() + 2, app1, app1 + sizeof(app1));
-}
-
 // "Open" mode: invoked when Windows launches us as the .arw file handler with a
 // single file path (e.g. double-click, when our app is the default for .arw).
 // We extract the embedded preview to %TEMP% and open it in the default image
@@ -183,7 +161,7 @@ int DoOpen(const wchar_t* input) {
         return 2;
     }
     // Make the temp JPEG carry the correct orientation so Photos shows it upright.
-    ApplyExifOrientation(jpeg, result.orientation);
+    arw::jpeg::InjectExifOrientation(jpeg, result.orientation);
     wchar_t temp[MAX_PATH] = {};
     if (GetTempPathW(MAX_PATH, temp) == 0) return 3;
     fs::path out = fs::path(temp) / (fs::path(input).stem().wstring() + L"_preview.jpg");

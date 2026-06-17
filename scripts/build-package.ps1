@@ -40,21 +40,20 @@ foreach ($t in @($makeappx, $signtool)) { if (-not (Test-Path $t)) { Write-Error
 # --- stage (always refresh payload from the latest Release build) -----------
 Write-Host "Staging package..." -ForegroundColor Cyan
 $thumbDll = Join-Path $relDir 'SonyArwThumbnailProvider\Release\SonyArwThumbnailProvider.dll'
-$hostExe  = Join-Path $relDir 'SonyArwPreviewExtract\Release\SonyArwPreviewExtract.exe'
+$openExe  = Join-Path $relDir 'SonyArwOpen\Release\SonyArwOpen.exe'
 $manifest = Join-Path $repo  'src\SonyArwThumbnailPackage\AppxManifest.xml'
-foreach ($f in @($thumbDll, $hostExe, $manifest)) { if (-not (Test-Path $f)) { Write-Error "Missing $f (build Release first)"; exit 1 } }
+foreach ($f in @($thumbDll, $openExe, $manifest)) { if (-not (Test-Path $f)) { Write-Error "Missing $f (build Release first)"; exit 1 } }
+if (Test-Path $stage) { Remove-Item -LiteralPath $stage -Recurse -Force }
 New-Item -ItemType Directory -Force $stage | Out-Null
 New-Item -ItemType Directory -Force (Join-Path $stage 'Assets') | Out-Null
 Copy-Item $manifest (Join-Path $stage 'AppxManifest.xml') -Force
 Copy-Item $thumbDll (Join-Path $stage 'SonyArwThumbnailProvider.dll') -Force
-Copy-Item $hostExe  (Join-Path $stage 'SonyArwPreviewExtract.exe') -Force
-if (-not (Test-Path (Join-Path $stage 'Assets\Square150x150Logo.png'))) {
-    Add-Type -AssemblyName System.Drawing
-    function New-Png([string]$p,[int]$w,[int]$h){ $b=New-Object System.Drawing.Bitmap($w,$h); $g=[System.Drawing.Graphics]::FromImage($b); $g.Clear([System.Drawing.Color]::FromArgb(255,0,120,215)); $g.Dispose(); $b.Save($p,[System.Drawing.Imaging.ImageFormat]::Png); $b.Dispose() }
-    New-Png (Join-Path $stage 'Assets\Square150x150Logo.png') 150 150
-    New-Png (Join-Path $stage 'Assets\Square44x44Logo.png')   44  44
-    New-Png (Join-Path $stage 'Assets\StoreLogo.png')         50  50
-}
+Copy-Item $openExe  (Join-Path $stage 'SonyArwOpen.exe') -Force
+Add-Type -AssemblyName System.Drawing
+function New-Png([string]$p,[int]$w,[int]$h){ $b=New-Object System.Drawing.Bitmap($w,$h); $g=[System.Drawing.Graphics]::FromImage($b); $g.Clear([System.Drawing.Color]::FromArgb(255,0,120,215)); $g.Dispose(); $b.Save($p,[System.Drawing.Imaging.ImageFormat]::Png); $b.Dispose() }
+New-Png (Join-Path $stage 'Assets\Square150x150Logo.png') 150 150
+New-Png (Join-Path $stage 'Assets\Square44x44Logo.png')   44  44
+New-Png (Join-Path $stage 'Assets\StoreLogo.png')         50  50
 
 New-Item -ItemType Directory -Force $out | Out-Null
 $msix = Join-Path $out 'SonyArwView.msix'

@@ -173,5 +173,24 @@ bool ValidateJpegWithWic(IWICImagingFactory* factory,
     return ok;
 }
 
+void InjectExifOrientation(std::vector<uint8_t>& jpeg, uint16_t orientation) noexcept {
+    if (orientation <= 1 || orientation > 8) return;
+    if (jpeg.size() < 2 || jpeg[0] != 0xFF || jpeg[1] != 0xD8) return; // need SOI
+    const uint8_t app1[] = {
+        0xFF, 0xE1, 0x00, 0x22,              // APP1, length = 34
+        'E','x','i','f', 0x00, 0x00,         // "Exif\0\0"
+        'I','I', 0x2A, 0x00,                 // TIFF little-endian, magic 42
+        0x08, 0x00, 0x00, 0x00,              // IFD0 offset = 8
+        0x01, 0x00,                          // IFD0 entry count = 1
+        0x12, 0x01,                          // tag 0x0112 (Orientation)
+        0x03, 0x00,                          // type 3 (SHORT)
+        0x01, 0x00, 0x00, 0x00,              // count 1
+        static_cast<uint8_t>(orientation & 0xFF),
+        static_cast<uint8_t>((orientation >> 8) & 0xFF), 0x00, 0x00, // value (inline)
+        0x00, 0x00, 0x00, 0x00               // next IFD offset = 0
+    };
+    jpeg.insert(jpeg.begin() + 2, app1, app1 + sizeof(app1));
+}
+
 } // namespace jpeg
 } // namespace arw

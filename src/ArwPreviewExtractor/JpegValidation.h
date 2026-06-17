@@ -13,6 +13,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <vector>
 
 // Forward declaration to avoid pulling <wincodec.h> into every translation unit.
 struct IWICImagingFactory;
@@ -22,6 +23,13 @@ namespace jpeg {
 
 // True if the buffer begins with a JPEG SOI + marker: FF D8 FF.
 bool LooksLikeJpegStart(const uint8_t* data, size_t size) noexcept;
+
+// Insert a minimal EXIF APP1 "Orientation" segment right after the JPEG SOI
+// (lossless, no re-encode). The Sony preview JPEG carries no EXIF orientation —
+// the flag lives in the ARW container — so injecting it lets EXIF-aware viewers
+// (e.g. Windows Photos) display portrait shots upright. No-op if orientation is
+// 1/out-of-range or the buffer is not a JPEG.
+void InjectExifOrientation(std::vector<uint8_t>& jpeg, uint16_t orientation) noexcept;
 
 // Walks JPEG marker segments starting at `soiOffset` (which must point at FF D8)
 // and finds the offset just past the matching EOI (FF D9).
