@@ -101,6 +101,8 @@ Open **SonyArwView** from the Start menu to get a small settings window
 * it shows whether SonyArwView is your `.arw` default (with a button to fix it), and
 * lets you choose **Windows Photos** or **your own viewer** (Browse to its `.exe`).
 
+![The SonyArwView settings window](docs/settings-window-en.png)
+
 > *Power users:* the same setting can be scripted with
 > `scripts\Set-Viewer.ps1 -Path "...\FSViewer.exe"` (or `-Clear`). It's stored
 > per-user in `%USERPROFILE%\.sonyarwview\viewer.txt` — a file, not the registry,
