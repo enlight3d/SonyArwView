@@ -14,7 +14,11 @@ preview. *(Built and verified on the Sony A7 V.)*
 What you get:
 
 * ✅ **Explorer thumbnails** for `.arw` — real, upright (orientation-correct) photos
-* ✅ **Double-click → opens the photo in Windows Photos** (the embedded preview)
+* ✅ **Double-click → opens the photo in Windows Photos** (the embedded preview),
+  with no command-window flash
+* ✅ **Or pass it through to your own viewer** (FastStone, Lightroom, …) with the
+  *original* `.arw`, so you keep full-folder browsing — see
+  [Open in your preferred viewer](#open-in-your-preferred-viewer-optional)
 * ✅ **Batch extraction** to `.jpg` via a small console tool
 * ✅ Coexists with the Microsoft Raw Image Extension — no need to remove it
 * 🚫 **No RAW decode.** No demosaicing, no LibRaw/ExifTool/ImageMagick/.NET, no
@@ -83,6 +87,28 @@ default).
 
 ---
 
+## Open in your preferred viewer (optional)
+
+By default, double-clicking an `.arw` extracts the embedded preview and opens it
+in Windows Photos. If you already have a viewer that reads Sony `.arw` natively
+(FastStone, Lightroom, …), point SonyArwView at it — double-click then launches
+**that** viewer with the **original** file, so you keep full-folder browsing and
+side-by-side compare. Explorer thumbnails are unaffected either way.
+
+```powershell
+# hand .arw opens to your viewer (with the original file)
+powershell -ExecutionPolicy Bypass -File .\scripts\Set-Viewer.ps1 -Path "C:\Program Files\FastStone Image Viewer\FSViewer.exe"
+
+# revert to extract-and-open-in-Photos
+powershell -ExecutionPolicy Bypass -File .\scripts\Set-Viewer.ps1 -Clear
+```
+
+The choice is stored per-user in `%USERPROFILE%\.sonyarwview\viewer.txt` (a file,
+not the registry, because the packaged open handler runs with a virtualized
+registry and wouldn't see an `HKCU` value written from outside the package).
+
+---
+
 ## Batch-extract previews (no install needed)
 
 ```powershell
@@ -99,16 +125,17 @@ $exe = ".\build\src\SonyArwPreviewExtract\Release\SonyArwPreviewExtract.exe"
 | Component | Kind | Purpose |
 |---|---|---|
 | `ArwPreviewExtractor` | static lib | Endian-aware TIFF/IFD parser; finds & validates the embedded preview; reads orientation. |
-| `SonyArwPreviewExtract.exe` | console | Extractor (`--info` / `--scan-folder`) **and** the `.arw` "open" handler. |
+| `SonyArwPreviewExtract.exe` | console | Batch extractor (`--info` / `--scan-folder`). |
+| `SonyArwOpen.exe` | windowless | The `.arw` "open" handler bundled in the package — extract→Photos, or pass-through to your viewer. No console window. |
 | `SonyArwWicDecoder.dll` | COM / WIC | Exposes `.ARW` to classic/desktop **WIC** apps (optional). |
 | `SonyArwThumbnailProvider.dll` | COM | Orientation-correct Explorer thumbnails. |
-| **SonyArwView** (MSIX) | app package | Packages the thumbnail provider so it can win `.arw` on Win11, and is the `.arw` open handler. |
+| **SonyArwView** (MSIX) | app package | Packages the thumbnail provider so it can win `.arw` on Win11, and bundles the open handler. |
 | `WicDecodeTest` / `ThumbTest` | console | Source-of-truth testers. |
 
 ```
-src/     ArwPreviewExtractor · SonyArwPreviewExtract · SonyArwWicDecoder
+src/     ArwPreviewExtractor · SonyArwPreviewExtract · SonyArwOpen · SonyArwWicDecoder
          SonyArwThumbnailProvider · SonyArwThumbnailPackage · WicDecodeTest · ThumbTest
-scripts/ build-package · Install · Uninstall  (+ advanced register/unregister helpers)
+scripts/ build-package · Install · Uninstall · Set-Viewer  (+ advanced register/unregister helpers)
 docs/    HOW-IT-WORKS · TROUBLESHOOTING · REGISTRY
 ```
 

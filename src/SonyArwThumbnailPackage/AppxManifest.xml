@@ -22,13 +22,14 @@
   xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
   xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
   xmlns:com="http://schemas.microsoft.com/appx/manifest/com/windows10"
   xmlns:desktop2="http://schemas.microsoft.com/appx/manifest/desktop/windows10/2"
-  IgnorableNamespaces="uap rescap com desktop2">
+  IgnorableNamespaces="uap uap3 rescap com desktop2">
 
   <Identity Name="SonyArwView"
             Publisher="CN=SonyArwView"
-            Version="1.0.1.0"
+            Version="1.1.0.0"
             ProcessorArchitecture="x64" />
 
   <Properties>
@@ -48,7 +49,7 @@
   <Applications>
     <Application Id="App"
                  Executable="SonyArwOpen.exe"
-                 EntryPoint="windows.FullTrustApplication">
+                 EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements
           AppListEntry="none"
           DisplayName="SonyArwView - Sony ARW Preview"
@@ -68,16 +69,20 @@
           </com:ComServer>
         </com:Extension>
         <!-- Associate that class as the thumbnail handler for .arw, and make this
-             app a handler for .arw (so it can be the default and own thumbnails). -->
+             app a handler for .arw (so it can be the default and own thumbnails).
+             Parameters="%1": because this is a full-trust packaged app, Windows
+             passes the opened file PATH on the command line (argv[1]) instead of
+             using the WinRT activation contract, so the open handler is a plain
+             dependency-free Win32 program. -->
         <uap:Extension Category="windows.fileTypeAssociation">
-          <uap:FileTypeAssociation Name="arw">
+          <uap3:FileTypeAssociation Name="arw" Parameters="&quot;%1&quot;">
             <uap:SupportedFileTypes>
               <uap:FileType>.arw</uap:FileType>
             </uap:SupportedFileTypes>
             <uap:Logo>Assets\Square44x44Logo.png</uap:Logo>
             <uap:DisplayName>Sony ARW (Embedded Preview)</uap:DisplayName>
             <desktop2:ThumbnailHandler Clsid="7A501F17-2299-40E4-ABC8-C1FECD9D10D2" />
-          </uap:FileTypeAssociation>
+          </uap3:FileTypeAssociation>
         </uap:Extension>
       </Extensions>
     </Application>

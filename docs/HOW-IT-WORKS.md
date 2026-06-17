@@ -103,6 +103,34 @@ Windows protects that choice with a per-user hash specifically to stop apps
 setting it silently (and recent builds harden it further with "UserChoiceLatest").
 So the installer opens Settings to the right page for a single click.
 
+### Getting the opened file to the handler — `Parameters="%1"`
+
+Being the default app is also what makes "open" tricky. A packaged default app is
+normally launched through the WinRT **activation contract**: the shell starts it
+as an out-of-process COM server (command line `… -ServerName:App.AppX….mca`, *not*
+the file path) and delivers the file via an inbound COM call. A WinUI/XAML app or
+the .NET runtime host services that handshake automatically; a plain Win32/C++
+process does not, so `AppInstance.GetActivatedEventArgs()` only ever reports a bare
+*Launch* and the shell gives up with *"the application didn't start."* (Even the
+Windows App SDK's AppLifecycle API doesn't fix this for a non-XAML app — the
+servicing lives in the application framework, not the API.)
+
+The fix is one manifest attribute. Declaring the association as a
+`uap3:FileTypeAssociation` with **`Parameters="%1"`** switches a **full-trust**
+packaged app off the activation contract: Windows passes the opened file as a
+normal command-line argument instead. So `SonyArwOpen.exe` just reads `argv[1]` —
+no WinRT, no COM server, no extra dependency — and as a `/SUBSYSTEM:WINDOWS` app it
+shows no console window (no flash). One catch: `Parameters` is only honoured when
+the app's `EntryPoint` is exactly `Windows.FullTrustApplication` (the manifest
+validator is case-sensitive here).
+
+The pass-through viewer setting can't live in `HKCU` for the same packaging
+reason: an MSIX process gets a **virtualized registry** and can't see a
+`Software\SonyArwView` key written by the (non-packaged) `Set-Viewer` script. Its
+**file system isn't** virtualized, though, and `%USERPROFILE%` resolves to the same
+real profile for both — so the setting is a file at
+`%USERPROFILE%\.sonyarwview\viewer.txt`.
+
 ---
 
 ## Orientation
