@@ -21,6 +21,7 @@
 #include <windows.h>
 #include <objbase.h>
 #include <shellapi.h>
+#include <commctrl.h>
 
 #include <filesystem>
 #include <string>
@@ -140,6 +141,9 @@ int APIENTRY wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
     const std::wstring input = GetInputPath();
     if (input.empty()) {
         // Launched with no file (from the Start menu) -> show the settings window.
+        // Activate Common Controls v6 (modern Visual Styles) for the dialog.
+        INITCOMMONCONTROLSEX icc = { sizeof(icc), ICC_STANDARD_CLASSES };
+        InitCommonControlsEx(&icc);
         ShowSettingsDialog();
         return 0;
     }
