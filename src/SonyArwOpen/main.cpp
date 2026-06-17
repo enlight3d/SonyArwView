@@ -17,6 +17,7 @@
 #include "ArwPreviewExtractor.h"
 #include "JpegValidation.h"
 #include "Config.h"
+#include "Loc.h"
 
 #include <windows.h>
 #include <objbase.h>
@@ -106,9 +107,7 @@ int Run(const std::wstring& inputStr) {
     arw::ExtractResult result;
     const HRESULT hr = arw::ExtractEmbeddedJpegFromFile(input, jpeg, &result);
     if (FAILED(hr) || !result.success || jpeg.empty()) {
-        MessageBoxW(nullptr,
-            L"SonyArwView couldn't find a usable preview inside this .ARW file.",
-            L"SonyArwView", MB_OK | MB_ICONWARNING);
+        MessageBoxW(nullptr, loc::ExtractFailed(), L"SonyArwView", MB_OK | MB_ICONWARNING);
         rc = 2;
     } else {
         // Inject orientation (lossless) so Photos shows portrait shots upright.

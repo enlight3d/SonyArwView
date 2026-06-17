@@ -8,6 +8,7 @@
 // handler reads). Plain Win32 dialog -- no extra dependencies.
 
 #include "Config.h"
+#include "Loc.h"
 #include "resource.h"
 
 #include <windows.h>
@@ -50,10 +51,10 @@ void OnBrowse(HWND dlg) {
     OPENFILENAMEW ofn = {};
     ofn.lStructSize = sizeof(ofn);
     ofn.hwndOwner = dlg;
-    ofn.lpstrFilter = L"Programs\0*.exe\0All files\0*.*\0";
+    ofn.lpstrFilter = loc::BrowseFilter();
     ofn.lpstrFile = file;
     ofn.nMaxFile = MAX_PATH;
-    ofn.lpstrTitle = L"Choose the app to open .arw files with";
+    ofn.lpstrTitle = loc::BrowseTitle();
     ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
     if (GetOpenFileNameW(&ofn)) {
         SetDlgItemTextW(dlg, IDC_VIEWERPATH, file);
@@ -63,10 +64,19 @@ void OnBrowse(HWND dlg) {
 }
 
 void OnInit(HWND dlg) {
+    // Localize all the static labels (EN/FR) -- the .rc text is just the baseline.
+    SetDlgItemTextW(dlg, IDC_GRP_DEFAULT,  loc::GrpDefault());
+    SetDlgItemTextW(dlg, IDC_SETDEFAULT,   loc::BtnSetDefault());
+    SetDlgItemTextW(dlg, IDC_GRP_OPEN,     loc::GrpOpen());
+    SetDlgItemTextW(dlg, IDC_RADIO_PHOTOS, loc::RadioPhotos());
+    SetDlgItemTextW(dlg, IDC_RADIO_VIEWER, loc::RadioViewer());
+    SetDlgItemTextW(dlg, IDC_BROWSE,       loc::BtnBrowse());
+    SetDlgItemTextW(dlg, IDC_THUMBS,       loc::ThumbsNote());
+    SetDlgItemTextW(dlg, IDOK,             loc::BtnSave());
+    SetDlgItemTextW(dlg, IDCANCEL,         loc::BtnClose());
+
     SetDlgItemTextW(dlg, IDC_STATUS,
-        IsDefaultForArw()
-            ? L"\x2713  SonyArwView is your default for .arw."
-            : L"\x26A0  SonyArwView is not the default for .arw yet.");
+        IsDefaultForArw() ? loc::StatusIsDefault() : loc::StatusNotDefault());
 
     const std::wstring viewer = cfg::ReadViewerRaw();
     if (!viewer.empty()) {
@@ -84,9 +94,7 @@ bool OnSave(HWND dlg) {
         wchar_t path[MAX_PATH] = {};
         GetDlgItemTextW(dlg, IDC_VIEWERPATH, path, MAX_PATH);
         if (path[0] == L'\0') {
-            MessageBoxW(dlg,
-                L"Pick a viewer with Browse, or choose \"Show the preview in Windows Photos\".",
-                L"SonyArwView", MB_OK | MB_ICONINFORMATION);
+            MessageBoxW(dlg, loc::NeedViewer(), L"SonyArwView", MB_OK | MB_ICONINFORMATION);
             return false;
         }
         cfg::WriteViewer(path);

@@ -4,22 +4,24 @@
 // Embed the application manifest (Common Controls v6 -> modern Visual Styles).
 CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "SonyArwOpen.manifest"
 
-IDD_SETTINGS DIALOGEX 0, 0, 286, 176
+/* Control TEXT below is the English baseline; it is set at runtime (localized
+   EN/FR) in OnInit via Loc.h, so the layout is sized for the longer French text. */
+IDD_SETTINGS DIALOGEX 0, 0, 300, 176
 STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "SonyArwView"
 FONT 9, "Segoe UI", 400, 0, 1
 BEGIN
-    GROUPBOX        "Default app for .arw", -1, 7, 7, 272, 48
-    LTEXT           "", IDC_STATUS, 16, 21, 256, 16
-    PUSHBUTTON      "Make SonyArwView the default...", IDC_SETDEFAULT, 16, 36, 160, 14
+    GROUPBOX        "Default app for .arw", IDC_GRP_DEFAULT, 7, 7, 286, 48
+    LTEXT           "", IDC_STATUS, 16, 21, 270, 16
+    PUSHBUTTON      "Make SonyArwView the default...", IDC_SETDEFAULT, 16, 36, 200, 14
 
-    GROUPBOX        "When I open an .arw file", -1, 7, 61, 272, 78
-    AUTORADIOBUTTON "Show the preview in Windows Photos", IDC_RADIO_PHOTOS, 16, 75, 256, 10, WS_GROUP | WS_TABSTOP
-    AUTORADIOBUTTON "Open it in my own viewer (the original file):", IDC_RADIO_VIEWER, 16, 90, 256, 10
-    EDITTEXT        IDC_VIEWERPATH, 26, 103, 196, 13, ES_AUTOHSCROLL
-    PUSHBUTTON      "Browse...", IDC_BROWSE, 226, 103, 46, 13
-    LTEXT           "Explorer thumbnails work either way.", -1, 16, 123, 256, 10
+    GROUPBOX        "When I open an .arw file", IDC_GRP_OPEN, 7, 61, 286, 78
+    AUTORADIOBUTTON "Show the preview in Windows Photos", IDC_RADIO_PHOTOS, 16, 75, 270, 10, WS_GROUP | WS_TABSTOP
+    AUTORADIOBUTTON "Open it in my own viewer (the original file):", IDC_RADIO_VIEWER, 16, 90, 270, 10
+    EDITTEXT        IDC_VIEWERPATH, 26, 103, 214, 13, ES_AUTOHSCROLL
+    PUSHBUTTON      "Browse...", IDC_BROWSE, 244, 103, 46, 13
+    LTEXT           "Explorer thumbnails work either way.", IDC_THUMBS, 16, 123, 270, 10
 
-    DEFPUSHBUTTON   "Save", IDOK, 171, 152, 50, 16
-    PUSHBUTTON      "Close", IDCANCEL, 229, 152, 50, 16
+    DEFPUSHBUTTON   "Save", IDOK, 181, 152, 54, 16
+    PUSHBUTTON      "Close", IDCANCEL, 239, 152, 54, 16
 END

@@ -95,7 +95,8 @@ in Windows Photos. If you already have a viewer that reads Sony `.arw` natively
 launches **that** viewer with the **original** file, so you keep full-folder
 browsing and side-by-side compare. Explorer thumbnails are unaffected either way.
 
-Open **SonyArwView** from the Start menu to get a small settings window:
+Open **SonyArwView** from the Start menu to get a small settings window
+(in English or French, following your Windows display language):
 
 * it shows whether SonyArwView is your `.arw` default (with a button to fix it), and
 * lets you choose **Windows Photos** or **your own viewer** (Browse to its `.exe`).

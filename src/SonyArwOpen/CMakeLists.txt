@@ -8,6 +8,12 @@ target_link_libraries(SonyArwOpen PRIVATE ArwPreviewExtractor shell32 user32 adv
 
 arw_common_target(SonyArwOpen)
 
+# Compile sources as UTF-8 so the accented French string literals in Loc.h get the
+# correct wide-char codepoints.
+if(MSVC)
+    target_compile_options(SonyArwOpen PRIVATE /utf-8)
+endif()
+
 # Windows subsystem: no console window -> no command-window flash when opening an
 # .arw. The opened file arrives as a normal command-line argument (the manifest
 # declares the association with Parameters="%1", which a full-trust packaged app
