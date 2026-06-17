@@ -1,0 +1,22 @@
+#include <windows.h>
+#include "resource.h"
+
+IDD_SETTINGS DIALOGEX 0, 0, 286, 176
+STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "SonyArwView"
+FONT 9, "Segoe UI", 400, 0, 1
+BEGIN
+    GROUPBOX        "Default app for .arw", -1, 7, 7, 272, 48
+    LTEXT           "", IDC_STATUS, 16, 21, 256, 16
+    PUSHBUTTON      "Make SonyArwView the default...", IDC_SETDEFAULT, 16, 36, 160, 14
+
+    GROUPBOX        "When I open an .arw file", -1, 7, 61, 272, 78
+    AUTORADIOBUTTON "Show the preview in Windows Photos", IDC_RADIO_PHOTOS, 16, 75, 256, 10, WS_GROUP | WS_TABSTOP
+    AUTORADIOBUTTON "Open it in my own viewer (the original file):", IDC_RADIO_VIEWER, 16, 90, 256, 10
+    EDITTEXT        IDC_VIEWERPATH, 26, 103, 196, 13, ES_AUTOHSCROLL
+    PUSHBUTTON      "Browse...", IDC_BROWSE, 226, 103, 46, 13
+    LTEXT           "Explorer thumbnails work either way.", -1, 16, 123, 256, 10
+
+    DEFPUSHBUTTON   "Save", IDOK, 171, 152, 50, 16
+    PUSHBUTTON      "Close", IDCANCEL, 229, 152, 50, 16
+END

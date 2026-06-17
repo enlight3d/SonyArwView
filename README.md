@@ -91,21 +91,24 @@ default).
 
 By default, double-clicking an `.arw` extracts the embedded preview and opens it
 in Windows Photos. If you already have a viewer that reads Sony `.arw` natively
-(FastStone, Lightroom, …), point SonyArwView at it — double-click then launches
-**that** viewer with the **original** file, so you keep full-folder browsing and
-side-by-side compare. Explorer thumbnails are unaffected either way.
+(FastStone, Lightroom, …), you can point SonyArwView at it — double-clicking then
+launches **that** viewer with the **original** file, so you keep full-folder
+browsing and side-by-side compare. Explorer thumbnails are unaffected either way.
 
-```powershell
-# hand .arw opens to your viewer (with the original file)
-powershell -ExecutionPolicy Bypass -File .\scripts\Set-Viewer.ps1 -Path "C:\Program Files\FastStone Image Viewer\FSViewer.exe"
+Open **SonyArwView** from the Start menu to get a small settings window:
 
-# revert to extract-and-open-in-Photos
-powershell -ExecutionPolicy Bypass -File .\scripts\Set-Viewer.ps1 -Clear
-```
+* it shows whether SonyArwView is your `.arw` default (with a button to fix it), and
+* lets you choose **Windows Photos** or **your own viewer** (Browse to its `.exe`).
 
-The choice is stored per-user in `%USERPROFILE%\.sonyarwview\viewer.txt` (a file,
-not the registry, because the packaged open handler runs with a virtualized
-registry and wouldn't see an `HKCU` value written from outside the package).
+> *Power users:* the same setting can be scripted with
+> `scripts\Set-Viewer.ps1 -Path "...\FSViewer.exe"` (or `-Clear`). It's stored
+> per-user in `%USERPROFILE%\.sonyarwview\viewer.txt` — a file, not the registry,
+> because the packaged handler runs with a virtualized registry and wouldn't see an
+> `HKCU` value written from outside the package.
+
+> **Note:** this only helps if your viewer can actually read the camera's RAW. For
+> the newest Compressed HQ RAW that nothing decodes yet, leave it on Windows Photos
+> (the extracted preview).
 
 ---
 
@@ -126,7 +129,7 @@ $exe = ".\build\src\SonyArwPreviewExtract\Release\SonyArwPreviewExtract.exe"
 |---|---|---|
 | `ArwPreviewExtractor` | static lib | Endian-aware TIFF/IFD parser; finds & validates the embedded preview; reads orientation. |
 | `SonyArwPreviewExtract.exe` | console | Batch extractor (`--info` / `--scan-folder`). |
-| `SonyArwOpen.exe` | windowless | The `.arw` "open" handler bundled in the package — extract→Photos, or pass-through to your viewer. No console window. |
+| `SonyArwOpen.exe` | windowless | The `.arw` "open" handler bundled in the package — extract→Photos, or pass-through to your viewer (no console window). Launched with no file (from Start) it shows the settings window. |
 | `SonyArwWicDecoder.dll` | COM / WIC | Exposes `.ARW` to classic/desktop **WIC** apps (optional). |
 | `SonyArwThumbnailProvider.dll` | COM | Orientation-correct Explorer thumbnails. |
 | **SonyArwView** (MSIX) | app package | Packages the thumbnail provider so it can win `.arw` on Win11, and bundles the open handler. |

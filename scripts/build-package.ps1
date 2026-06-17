@@ -50,10 +50,57 @@ Copy-Item $manifest (Join-Path $stage 'AppxManifest.xml') -Force
 Copy-Item $thumbDll (Join-Path $stage 'SonyArwThumbnailProvider.dll') -Force
 Copy-Item $openExe  (Join-Path $stage 'SonyArwOpen.exe') -Force
 Add-Type -AssemblyName System.Drawing
-function New-Png([string]$p,[int]$w,[int]$h){ $b=New-Object System.Drawing.Bitmap($w,$h); $g=[System.Drawing.Graphics]::FromImage($b); $g.Clear([System.Drawing.Color]::FromArgb(255,0,120,215)); $g.Dispose(); $b.Save($p,[System.Drawing.Imaging.ImageFormat]::Png); $b.Dispose() }
-New-Png (Join-Path $stage 'Assets\Square150x150Logo.png') 150 150
-New-Png (Join-Path $stage 'Assets\Square44x44Logo.png')   44  44
-New-Png (Join-Path $stage 'Assets\StoreLogo.png')         50  50
+# Original "ARW document" icon (folded-corner page, bold ARW, histogram bars) at
+# the requested size. Transparent background; shown on the tile BackgroundColor.
+function New-ArwIcon([string]$path, [int]$s) {
+    $bmp = New-Object System.Drawing.Bitmap($s, $s)
+    $g = [System.Drawing.Graphics]::FromImage($bmp)
+    $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
+    $g.Clear([System.Drawing.Color]::Transparent)
+    $ink    = [System.Drawing.Color]::FromArgb(255, 55, 60, 70)
+    $paper  = [System.Drawing.Color]::FromArgb(255, 250, 250, 252)
+    $foldC  = [System.Drawing.Color]::FromArgb(255, 205, 210, 218)
+    $accent = [System.Drawing.Color]::FromArgb(255, 10, 132, 255)
+    [single]$left = $s * 0.20; [single]$right = $s * 0.80
+    [single]$top = $s * 0.12;  [single]$bottom = $s * 0.88
+    [single]$fold = $s * 0.20
+    [single]$w = $right - $left; [single]$h = $bottom - $top
+    $doc = New-Object System.Drawing.Drawing2D.GraphicsPath
+    $doc.AddPolygon(@(
+        (New-Object System.Drawing.PointF($left, $top)),
+        (New-Object System.Drawing.PointF(($right - $fold), $top)),
+        (New-Object System.Drawing.PointF($right, ($top + $fold))),
+        (New-Object System.Drawing.PointF($right, $bottom)),
+        (New-Object System.Drawing.PointF($left, $bottom))))
+    $doc.CloseFigure()
+    $g.FillPath((New-Object System.Drawing.SolidBrush $paper), $doc)
+    $foldPts = @(
+        (New-Object System.Drawing.PointF(($right - $fold), $top)),
+        (New-Object System.Drawing.PointF(($right - $fold), ($top + $fold))),
+        (New-Object System.Drawing.PointF($right, ($top + $fold))))
+    $g.FillPolygon((New-Object System.Drawing.SolidBrush $foldC), $foldPts)
+    $pen = New-Object System.Drawing.Pen($ink, [single]([Math]::Max(2.0, $s * 0.028)))
+    $pen.LineJoin = [System.Drawing.Drawing2D.LineJoin]::Round
+    $g.DrawPath($pen, $doc); $g.DrawPolygon($pen, $foldPts)
+    $bb = New-Object System.Drawing.SolidBrush $accent
+    [single]$barW = $w * 0.12; [single]$gap = $w * 0.08
+    [single]$baseY = $bottom - $h * 0.16; [single]$bx = $left + $w * 0.24
+    foreach ($f in @(0.16, 0.30, 0.22)) {
+        [single]$bh = $h * $f
+        $g.FillRectangle($bb, $bx, ($baseY - $bh), $barW, $bh); $bx = $bx + $barW + $gap
+    }
+    $font = New-Object System.Drawing.Font('Segoe UI', [single]($s * 0.19), [System.Drawing.FontStyle]::Bold, [System.Drawing.GraphicsUnit]::Pixel)
+    $fmt = New-Object System.Drawing.StringFormat
+    $fmt.Alignment = [System.Drawing.StringAlignment]::Center; $fmt.LineAlignment = [System.Drawing.StringAlignment]::Center
+    $g.DrawString('ARW', $font, (New-Object System.Drawing.SolidBrush $ink),
+        (New-Object System.Drawing.RectangleF($left, ($top + $h * 0.20), $w, ($h * 0.32))), $fmt)
+    $g.Dispose()
+    $bmp.Save($path, [System.Drawing.Imaging.ImageFormat]::Png)
+    $bmp.Dispose()
+}
+New-ArwIcon (Join-Path $stage 'Assets\Square150x150Logo.png') 150
+New-ArwIcon (Join-Path $stage 'Assets\Square44x44Logo.png')   44
+New-ArwIcon (Join-Path $stage 'Assets\StoreLogo.png')         50
 
 New-Item -ItemType Directory -Force $out | Out-Null
 $msix = Join-Path $out 'SonyArwView.msix'

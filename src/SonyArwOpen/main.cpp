@@ -16,6 +16,7 @@
 
 #include "ArwPreviewExtractor.h"
 #include "JpegValidation.h"
+#include "Config.h"
 
 #include <windows.h>
 #include <objbase.h>
@@ -51,42 +52,13 @@ bool WriteAllBytes(const wchar_t* path, const std::vector<uint8_t>& bytes) {
     return ok && total == bytes.size();
 }
 
-// Optional "pass-through" viewer the user configured (full path to an app that
-// opens .arw natively, e.g. FastStone/Lightroom). Empty if unset.
-//
-// Stored in a FILE at %USERPROFILE%\.sonyarwview\viewer.txt rather than the
-// registry: a packaged (MSIX) process gets a virtualized HKCU and cannot see a
-// Software\SonyArwView key written by the (non-packaged) Set-Viewer script, but
-// its file system is NOT virtualized, and %USERPROFILE% resolves to the same real
-// profile for both. The file is UTF-8 (optionally BOM); env vars are expanded.
+// The user's optional "pass-through" viewer (full path to an app that opens .arw
+// natively, e.g. FastStone/Lightroom). Read from %USERPROFILE%\.sonyarwview\
+// viewer.txt (see Config.h for why a file and not the registry). Env vars in the
+// stored value are expanded. Empty if unset.
 std::wstring ReadPreferredViewer() {
-    wchar_t profile[MAX_PATH] = {};
-    const DWORD pn = GetEnvironmentVariableW(L"USERPROFILE", profile, MAX_PATH);
-    if (pn == 0 || pn >= MAX_PATH) return std::wstring();
-    const std::wstring path = std::wstring(profile) + L"\\.sonyarwview\\viewer.txt";
-
-    HANDLE h = CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr,
-                           OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-    if (h == INVALID_HANDLE_VALUE) return std::wstring();
-
-    char buf[2048] = {};
-    DWORD read = 0;
-    ReadFile(h, buf, sizeof(buf) - 1, &read, nullptr);
-    CloseHandle(h);
-    if (read == 0) return std::wstring();
-
-    std::wstring raw;
-    const int wlen = MultiByteToWideChar(CP_UTF8, 0, buf, static_cast<int>(read), nullptr, 0);
-    if (wlen <= 0) return std::wstring();
-    raw.resize(static_cast<size_t>(wlen));
-    MultiByteToWideChar(CP_UTF8, 0, buf, static_cast<int>(read), &raw[0], wlen);
-    if (!raw.empty() && raw.front() == 0xFEFF) raw.erase(raw.begin());  // strip BOM
-    while (!raw.empty() && (raw.back() == L'\r' || raw.back() == L'\n' ||
-                            raw.back() == L' ' || raw.back() == L'\t')) {
-        raw.pop_back();
-    }
+    const std::wstring raw = cfg::ReadViewerRaw();
     if (raw.empty()) return std::wstring();
-
     wchar_t expanded[1024] = {};
     const DWORD n = ExpandEnvironmentStringsW(raw.c_str(), expanded, 1024);
     return (n > 0 && n <= 1024) ? std::wstring(expanded) : raw;
@@ -162,6 +134,14 @@ int Run(const std::wstring& inputStr) {
 
 } // namespace
 
+void ShowSettingsDialog();  // Settings.cpp
+
 int APIENTRY wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
-    return Run(GetInputPath());
+    const std::wstring input = GetInputPath();
+    if (input.empty()) {
+        // Launched with no file (from the Start menu) -> show the settings window.
+        ShowSettingsDialog();
+        return 0;
+    }
+    return Run(input);
 }

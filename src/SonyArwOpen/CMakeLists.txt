@@ -1,8 +1,10 @@
-# SonyArwOpen - windowless .arw open handler bundled in the MSIX package.
+# SonyArwOpen - .arw open handler + settings window, bundled in the MSIX package.
+# With a file argument it opens the photo; with none (Start menu) it shows the
+# settings dialog (Settings.cpp / Settings.rc).
 
-add_executable(SonyArwOpen main.cpp)
+add_executable(SonyArwOpen main.cpp Settings.cpp Settings.rc)
 
-target_link_libraries(SonyArwOpen PRIVATE ArwPreviewExtractor shell32 user32 advapi32)
+target_link_libraries(SonyArwOpen PRIVATE ArwPreviewExtractor shell32 user32 advapi32 comdlg32)
 
 arw_common_target(SonyArwOpen)
 

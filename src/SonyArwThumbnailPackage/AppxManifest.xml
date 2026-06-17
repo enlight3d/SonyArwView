@@ -29,7 +29,7 @@
 
   <Identity Name="SonyArwView"
             Publisher="CN=SonyArwView"
-            Version="1.1.0.0"
+            Version="1.1.1.0"
             ProcessorArchitecture="x64" />
 
   <Properties>
@@ -50,9 +50,11 @@
     <Application Id="App"
                  Executable="SonyArwOpen.exe"
                  EntryPoint="Windows.FullTrustApplication">
+      <!-- Listed in the Start menu: launching it with no file shows the settings
+           window (pick a pass-through viewer / set as default). Opening an .arw
+           passes the file on the command line, which runs the open handler. -->
       <uap:VisualElements
-          AppListEntry="none"
-          DisplayName="SonyArwView - Sony ARW Preview"
+          DisplayName="SonyArwView"
           Description="View Sony ARW (A7 V) embedded previews and show Explorer thumbnails."
           BackgroundColor="#0078D7"
           Square150x150Logo="Assets\Square150x150Logo.png"
